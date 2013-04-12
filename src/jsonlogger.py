@@ -76,6 +76,25 @@ class JsonFormatter(logging.Formatter):
         standard_formatters = re.compile(r'\((.+?)\)', re.IGNORECASE)
         return standard_formatters.findall(self._fmt)
 
+    def formatException(self, ei):
+        """
+        Format and return the specified exception information as a dictonary
+        """
+        detail = {}
+        detail['type'] = ei[0].__name__
+        detail['value'] = ei[1]
+        tb = ei[2]
+        frames = []
+        while tb is not None:
+            f = tb.tb_frame
+            co = f.f_code
+            frames.append({'file':co.co_filename, 'ln': tb.tb_lineno, 'fn': co.co_name})
+            tb = tb.tb_next
+
+        detail['trace'] = frames
+
+        return detail
+
     def format(self, record):
         """Formats a log record and serializes to json"""
         extras = {}
@@ -95,6 +114,11 @@ class JsonFormatter(logging.Formatter):
 
         for field in self._required_fields:
             log_record[field] = record.__dict__[field]
+        if record.exc_info:
+            if not record.exc_text:
+                record.exc_text = self.formatException(record.exc_info)
+            log_record['exc'] = record.exc_text
+
         log_record.update(extras)
         merge_record_extra(record, log_record, reserved=self._skip_fields)
 

@@ -61,6 +61,7 @@ Example
 =======
 
 Sample JSON with a full formatter (basically the log message from the unit test). Every log message will appear on 1 line like a typical logger.
+If logger.exception method is called or exc_info is set then an "exc" property will be added to the output.
 
 ```json
 {
@@ -82,6 +83,7 @@ Sample JSON with a full formatter (basically the log message from the unit test)
     "filename": "tests.py", 
     "levelname": "INFO",
     "special": "value",
-    "run": 12
+    "run": 12,
+    "exc": {"type": "Exception", "trace": [{"ln": 37, "fn": "testLogException", "file": "/Users/you/src/libs/python-json-logger/tests/tests.py"}], "value": "fubar"}
 }
 ```

@@ -24,6 +24,28 @@ class TestJsonLogger(unittest.TestCase):
         self.logHandler = logging.StreamHandler(self.buffer)
         self.logger.addHandler(self.logHandler)
 
+    def testLogException(self):
+        '''
+        !!! WARNING !!!
+        This test ensures proper exception capture, so adjusting the code may alter
+        stack traces and break this test
+        '''
+        fr = jsonlogger.JsonFormatter("%(levelname)s %(message)s")
+        self.logHandler.setFormatter(fr)
+
+        try:
+            raise Exception("fubar")
+        except:
+            self.logger.exception("snafu")
+        print self.buffer.getvalue()
+        logJson = json.loads(self.buffer.getvalue())
+        self.assertEqual(logJson["message"], "snafu")
+        self.assertTrue(logJson['exc'])
+        self.assertEqual(len(logJson['exc']['trace']),1)
+        self.assertEqual(logJson['exc']['trace'][0]['fn'], 'testLogException')
+        self.assertEqual(logJson['exc']['trace'][0]['ln'], 37)
+        self.assertTrue(logJson['exc']['trace'][0]['file'].endswith('tests.py'))
+
     def testDefaultFormat(self):
         fr = jsonlogger.JsonFormatter()
         self.logHandler.setFormatter(fr)
