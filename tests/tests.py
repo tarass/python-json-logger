@@ -1,4 +1,7 @@
-import unittest, logging, json, sys
+import unittest
+import logging
+import json
+import sys
 
 try:
     import xmlrunner
@@ -15,12 +18,13 @@ sys.path.append('src')
 import jsonlogger
 import datetime
 
+
 class TestJsonLogger(unittest.TestCase):
     def setUp(self):
         self.logger = logging.getLogger('logging-test')
         self.logger.setLevel(logging.DEBUG)
         self.buffer = StringIO()
-        
+
         self.logHandler = logging.StreamHandler(self.buffer)
         self.logger.addHandler(self.logHandler)
 
@@ -37,13 +41,14 @@ class TestJsonLogger(unittest.TestCase):
             raise Exception("fubar")
         except:
             self.logger.exception("snafu")
-        print self.buffer.getvalue()
+
         logJson = json.loads(self.buffer.getvalue())
+
         self.assertEqual(logJson["message"], "snafu")
         self.assertTrue(logJson['exc'])
-        self.assertEqual(len(logJson['exc']['trace']),1)
+        self.assertEqual(len(logJson['exc']['trace']), 1)
         self.assertEqual(logJson['exc']['trace'][0]['fn'], 'testLogException')
-        self.assertEqual(logJson['exc']['trace'][0]['ln'], 37)
+        self.assertEqual(logJson['exc']['trace'][0]['ln'], 41)
         self.assertTrue(logJson['exc']['trace'][0]['file'].endswith('tests.py'))
 
     def testDefaultFormat(self):
@@ -77,7 +82,7 @@ class TestJsonLogger(unittest.TestCase):
             'threadName'
         ]
 
-        log_format = lambda x : ['%({0:s})'.format(i) for i in x] 
+        log_format = lambda x: ['%({0:s})'.format(i) for i in x]
         custom_format = ' '.join(log_format(supported_keys))
 
         fr = jsonlogger.JsonFormatter(custom_format)
@@ -91,11 +96,11 @@ class TestJsonLogger(unittest.TestCase):
         for supported_key in supported_keys:
             if supported_key in log_json:
                 self.assertTrue(True)
-    
+
     def testUnknownFormatKey(self):
         fr = jsonlogger.JsonFormatter('%(unknown_key)s %(message)s')
         self.assertRaises(KeyError,
-                          fr.format, logging.makeLogRecord({"msg":"test"}))
+                          fr.format, logging.makeLogRecord({"msg": "test"}))
 
         self.logHandler.setFormatter(fr)
         msg = "testing unknown logging format"
@@ -108,7 +113,7 @@ class TestJsonLogger(unittest.TestCase):
         fr = jsonlogger.JsonFormatter()
         self.logHandler.setFormatter(fr)
 
-        msg = {"text":"testing logging", "num": 1, 5: "9",
+        msg = {"text": "testing logging", "num": 1, 5: "9",
                "nested": {"more": "data"}}
         self.logger.info(msg)
         logJson = json.loads(self.buffer.getvalue())
@@ -122,8 +127,8 @@ class TestJsonLogger(unittest.TestCase):
         fr = jsonlogger.JsonFormatter()
         self.logHandler.setFormatter(fr)
 
-        extra = {"text":"testing logging", "num": 1, 5: "9",
-               "nested": {"more": "data"}}
+        extra = {"text": "testing logging", "num": 1, 5: "9",
+                 "nested": {"more": "data"}}
         self.logger.info("hello", extra=extra)
         logJson = json.loads(self.buffer.getvalue())
         self.assertEqual(logJson.get("text"), extra["text"])
@@ -153,10 +158,47 @@ class TestJsonLogger(unittest.TestCase):
         self.assertEqual(logJson.get("adate"), "very custom")
         self.assertEqual(logJson.get("normal"), "value")
 
-if __name__=='__main__':
-    if len(sys.argv[1:]) > 0 :
+
+class TestExtraTextLogger(unittest.TestCase):
+    def setUp(self):
+        self.logger = logging.getLogger('logging-test2')
+        self.logger.setLevel(logging.DEBUG)
+        self.buffer = StringIO()
+
+        self.logHandler = logging.StreamHandler(self.buffer)
+        self.logger.addHandler(self.logHandler)
+        fr = jsonlogger.ExtraTextFormatter()
+        self.logHandler.setFormatter(fr)
+
+    def testDefaultFormat(self):
+        msg = "testing logging format"
+        self.logger.info(msg)
+        logline = self.buffer.getvalue()
+
+        self.assertTrue(msg in logline, logline)
+
+    def testLogADict(self):
+        msg = {"text": "testing logging", "num": 1, 5: "9",
+               "nested": {"more": "data"}}
+        self.logger.info(msg)
+        logline = self.buffer.getvalue()
+
+        self.assertTrue('text: testing logging, num: 1, 5: 9, nested: {\'more\': \'data\'}' in logline, logline)
+
+    def testLogExtra(self):
+        extra = {"text": "testing logging", "num": 1, 5: "9",
+                 "nested": {"more": "data"}}
+        self.logger.info("hello", extra=extra)
+
+        logline = self.buffer.getvalue()
+
+        self.assertTrue('hello text: testing logging, num: 1, 5: 9, nested: {\'more\': \'data\'}' in logline, logline)
+
+
+if __name__ == '__main__':
+    if len(sys.argv[1:]) > 0:
         if sys.argv[1] == 'xml':
-            testSuite = unittest.TestLoader().loadTestsFromTestCase(testJsonLogger)
+            testSuite = unittest.TestLoader().loadTestsFromTestCase(TestJsonLogger)
             xmlrunner.XMLTestRunner(output='reports').run(testSuite)
     else:
         unittest.main()
