@@ -64,7 +64,7 @@ class JsonFormatter(logging.Formatter):
                     return obj.strftime('%Y-%m-%d')
                 elif isinstance(obj, datetime.time):
                     return obj.strftime('%H:%M')
-                return str(obj)
+                return unicode(obj)
             self.json_default = _default_json_handler
         self._required_fields = self.parse()
         self._skip_fields = dict(zip(self._required_fields,
