@@ -23,6 +23,7 @@ RESERVED_ATTRS = (
 
 RESERVED_ATTR_HASH = dict(zip(RESERVED_ATTRS, RESERVED_ATTRS))
 
+
 def merge_record_extra(record, target, reserved=RESERVED_ATTR_HASH):
     """
     Merges extra attributes from LogRecord object into target dictionary
@@ -33,11 +34,13 @@ def merge_record_extra(record, target, reserved=RESERVED_ATTR_HASH):
     """
     for key, value in record.__dict__.iteritems():
         #this allows to have numeric keys
-        if (key not in reserved
-            and not (hasattr(key,"startswith") and key.startswith('_'))
-            ):
+        if (
+            key not in reserved
+            and not (hasattr(key, "startswith") and key.startswith('_'))
+        ):
             target[key] = value
     return target
+
 
 class JsonFormatter(logging.Formatter):
     """
@@ -88,7 +91,7 @@ class JsonFormatter(logging.Formatter):
         while tb is not None:
             f = tb.tb_frame
             co = f.f_code
-            frames.append({'file':co.co_filename, 'ln': tb.tb_lineno, 'fn': co.co_name})
+            frames.append({'file': co.co_filename, 'ln': tb.tb_lineno, 'fn': co.co_name})
             tb = tb.tb_next
 
         detail['trace'] = frames
@@ -125,3 +128,42 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_record,
                           default=self.json_default,
                           cls=self.json_encoder)
+
+
+class ExtraTextFormatter(logging.Formatter):
+    """
+    A custom formatter to format logging records as regular strings.
+    extra values will be formatted as str() if nor supported by
+    json default encoder
+    """
+
+    def __init__(self, *args, **kwargs):
+        """
+        Will record values in the formatter so that we can skip
+        """
+        super(ExtraTextFormatter, self).__init__(*args, **kwargs)
+        self._required_fields = self.parse()
+        self._skip_fields = dict(zip(self._required_fields,
+                                     self._required_fields))
+        self._skip_fields.update(RESERVED_ATTR_HASH)
+
+    def parse(self):
+        """Parses format string looking for substitutions"""
+        standard_formatters = re.compile(r'\((.+?)\)', re.IGNORECASE)
+        return standard_formatters.findall(self._fmt)
+
+    def format(self, record):
+        """Formats a log record and serializes to json"""
+        extras = {}
+        if isinstance(record.msg, dict):
+            for key, val in record.msg.iteritems():
+                setattr(record, str(key), val)
+            record.msg = ''
+
+        line = super(ExtraTextFormatter, self).format(record)
+
+        merge_record_extra(record, extras, reserved=self._skip_fields)
+
+        line += ' ' + ', '.join(["%s: %s" % (key, val) for key, val in extras.iteritems()])
+
+        return line
