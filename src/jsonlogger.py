@@ -164,6 +164,6 @@ class ExtraTextFormatter(logging.Formatter):
 
         merge_record_extra(record, extras, reserved=self._skip_fields)
 
-        line += ' ' + ', '.join(["%s: %s" % (key, val) for key, val in extras.iteritems()])
+        line += ' ' + ', '.join(["%s: %s" % (key, json.dumps(val)) for key, val in extras.iteritems()])
 
         return line

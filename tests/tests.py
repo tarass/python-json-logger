@@ -183,7 +183,7 @@ class TestExtraTextLogger(unittest.TestCase):
         self.logger.info(msg)
         logline = self.buffer.getvalue()
 
-        self.assertTrue('text: testing logging, num: 1, 5: 9, nested: {\'more\': \'data\'}' in logline, logline)
+        self.assertTrue('text: "testing logging", num: 1, 5: "9", nested: {"more": "data"}' in logline, logline)
 
     def testLogExtra(self):
         extra = {"text": "testing logging", "num": 1, 5: "9",
@@ -192,7 +192,7 @@ class TestExtraTextLogger(unittest.TestCase):
 
         logline = self.buffer.getvalue()
 
-        self.assertTrue('hello text: testing logging, num: 1, 5: 9, nested: {\'more\': \'data\'}' in logline, logline)
+        self.assertTrue('hello text: "testing logging", num: 1, 5: "9", nested: {"more": "data"}' in logline, logline)
 
 
 if __name__ == '__main__':
