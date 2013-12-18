@@ -2,7 +2,6 @@ import unittest
 import logging
 import json
 import sys
-from bson import ObjectId
 
 try:
     import xmlrunner
@@ -49,7 +48,7 @@ class TestJsonLogger(unittest.TestCase):
         self.assertTrue(logJson['exc'])
         self.assertEqual(len(logJson['exc']['trace']), 1)
         self.assertEqual(logJson['exc']['trace'][0]['fn'], 'testLogException')
-        self.assertEqual(logJson['exc']['trace'][0]['ln'], 42)
+        self.assertEqual(logJson['exc']['trace'][0]['ln'], 41)
         self.assertTrue(logJson['exc']['trace'][0]['file'].endswith('tests.py'))
 
     def testDefaultFormat(self):
@@ -197,13 +196,17 @@ class TestExtraTextLogger(unittest.TestCase):
 
 
     def testObjectId(self):
-        oid = ObjectId('52b12ebd562bdb750a000000')
-        msg = {"text": "testing objectid", "oid": oid}
-        self.logger.info(msg)
-        logline = self.buffer.getvalue()
+        try:
+            from bson import ObjectId 
+            oid = ObjectId('52b12ebd562bdb750a000000')
+            msg = {"text": "testing objectid", "oid": oid}
+            self.logger.info(msg)
+            logline = self.buffer.getvalue()
 
-        self.assertEquals(' text: "testing objectid", oid: "52b12ebd562bdb750a000000"\n', logline)
+            self.assertEquals(' text: "testing objectid", oid: "52b12ebd562bdb750a000000"\n', logline)
 
+        except ImportError:
+            pass
 
     def testDatetime(self):
         date = datetime.datetime(2013, 12, 18, 12, 26)
