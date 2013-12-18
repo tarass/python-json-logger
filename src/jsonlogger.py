@@ -6,6 +6,7 @@ import logging
 import json
 import re
 import datetime
+import bson
 
 #Support order in python 2.7 and 3
 try:
@@ -142,6 +143,16 @@ class ExtraTextFormatter(logging.Formatter):
         Will record values in the formatter so that we can skip
         """
         super(ExtraTextFormatter, self).__init__(*args, **kwargs)
+        def _default_json_handler(obj):
+            '''Prints dates in ISO format'''
+            if isinstance(obj, datetime.datetime):
+                return obj.strftime(self.datefmt or '%Y-%m-%dT%H:%M')
+            elif isinstance(obj, datetime.date):
+                return obj.strftime('%Y-%m-%d')
+            elif isinstance(obj, datetime.time):
+                return obj.strftime('%H:%M')
+            return unicode(obj)
+        self.json_default = _default_json_handler
         self._required_fields = self.parse()
         self._skip_fields = dict(zip(self._required_fields,
                                      self._required_fields))
@@ -164,6 +175,6 @@ class ExtraTextFormatter(logging.Formatter):
 
         merge_record_extra(record, extras, reserved=self._skip_fields)
 
-        line += ' ' + ', '.join(["%s: %s" % (key, json.dumps(val)) for key, val in extras.iteritems()])
+        line += ' ' + ', '.join(["%s: %s" % (key, json.dumps(val, default=self.json_default)) for key, val in extras.iteritems()])
 
         return line
