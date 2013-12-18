@@ -6,7 +6,6 @@ import logging
 import json
 import re
 import datetime
-import bson
 
 #Support order in python 2.7 and 3
 try:
